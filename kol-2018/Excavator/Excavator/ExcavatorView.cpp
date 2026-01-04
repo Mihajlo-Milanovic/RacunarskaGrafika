@@ -58,6 +58,13 @@ CExcavatorView::CExcavatorView() noexcept
 	arm2Angle = 90;
 	forkAngle = 90;
 	excavatorDisplacement = 0;
+
+	excavatorArm1Joint = { 63, 171 };
+	arm1BigJoint = { 58, 61 };
+	arm1SmallJoint = { 309, 61 };
+	arm2BigJoint = { 36, 40 };
+	arm2SmallJoint = { 272, 40 };
+	forkJoint = { 14, 20 };
 }
 
 CExcavatorView::~CExcavatorView()
@@ -168,45 +175,41 @@ void CExcavatorView::DrawImgTransparent(CDC* pDC, DImage* pImage) {
 
 void CExcavatorView::DrawArm1(CDC* pDC) {
 
-	XFORM old;
-	pDC->GetWorldTransform(&old);
+	//XFORM old;
+	//pDC->GetWorldTransform(&old);
 
 	Rotate(pDC, arm1Angle);
-	Translate(pDC, -58, -61);
-	Translate(pDC, 58, 61, true);
+	Translate(pDC, -arm1BigJoint.x, -arm1BigJoint.y);
+	Translate(pDC, arm1BigJoint.x, arm1BigJoint.y, true);
 	DrawImgTransparent(pDC, &excavatorArm1);
 
-	pDC->SetWorldTransform(&old);
+	//pDC->SetWorldTransform(&old);
 }
 
 void CExcavatorView::DrawArm2(CDC* pDC) {
 
-	XFORM old;
-	pDC->GetWorldTransform(&old);
+	//XFORM old;
+	//pDC->GetWorldTransform(&old);
 
 	Rotate(pDC, arm2Angle);
-	Translate(pDC, -36, -40);
-	Translate(pDC, 36, 40, true);
+	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y);
+	Translate(pDC, arm2BigJoint.x, arm2BigJoint.y, true);
 	DrawImgTransparent(pDC, &excavatorArm2);
 
-	pDC->SetWorldTransform(&old);
+	//pDC->SetWorldTransform(&old);
 }
 
 void CExcavatorView::DrawFork(CDC* pDC) {
 
-	XFORM old;
-	pDC->GetWorldTransform(&old);
+	//XFORM old;
+	//pDC->GetWorldTransform(&old);
 
 	Rotate(pDC, forkAngle);
-	Translate(pDC, -35, -50);//(14,20) * 2.5
-	Translate(pDC, 35, 50, true);
-	pDC->PlayMetaFile(excavatorFork, CRect{ excavatorForkRect.left,
-											excavatorForkRect.top,
-											excavatorForkRect.left + int(excavatorForkRect.Width() * 2.5),
-											excavatorForkRect.top + int(excavatorForkRect.Height() * 2.5)
-	});
+	Translate(pDC, -forkJoint.x, -forkJoint.y);//(14,20) * 2.5
+	Translate(pDC, forkJoint.y, forkJoint.y, true);
+	pDC->PlayMetaFile(excavatorFork, excavatorForkRect);
 
-	pDC->SetWorldTransform(&old);
+	//pDC->SetWorldTransform(&old);
 }
 
 void CExcavatorView::DrawExcavator(CDC* pDC) {
@@ -214,11 +217,18 @@ void CExcavatorView::DrawExcavator(CDC* pDC) {
 	CRect cr;
 	GetClientRect(cr);
 
-	XFORM old, excavatorPosition;
+	XFORM old;
+	//XFORM excavatorPosition;
 	pDC->GetWorldTransform(&old);
 
 	Translate(pDC, cr.right - excavator.Width() + excavatorDisplacement, cr.bottom - excavator.Height());
 	DrawImgTransparent(pDC, &excavator);
+	/*
+		#########################################################
+		#		LEFTMULTIPLY ONLY SOLUTION (SUBOPTIMAL!)		#
+		#########################################################
+
+		TO USE UNCOMMENT TRANSFORMATION RESETS IN DRAW_PART FUNCTIONS
 
 	pDC->GetWorldTransform(&excavatorPosition);
 
@@ -241,6 +251,20 @@ void CExcavatorView::DrawExcavator(CDC* pDC) {
 	Rotate(pDC, arm2Angle);
 	Translate(pDC, 240, 0);
 	DrawFork(pDC);
+	*/
+
+	Translate(pDC, excavatorArm1Joint.x - arm1BigJoint.x, excavatorArm1Joint.y - arm1BigJoint.y);
+	DrawArm1(pDC);
+
+	Translate(pDC, arm1SmallJoint.x , arm1SmallJoint.y);
+	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y, true);
+	DrawArm2(pDC);
+
+	Translate(pDC, arm2SmallJoint.x, arm2SmallJoint.y);
+	Scale(pDC, 2.5, 2.5);
+	Translate(pDC, -forkJoint.x, -forkJoint.y, true);
+	DrawFork(pDC);
+
 
 	pDC->SetWorldTransform(&old);
 }

@@ -30,6 +30,14 @@ public:
 
 	int excavatorDisplacement;
 
+	CPoint excavatorArm1Joint;
+	CPoint arm1BigJoint;
+	CPoint arm1SmallJoint;
+	CPoint arm2BigJoint;
+	CPoint arm2SmallJoint;
+	CPoint forkJoint;
+	
+
 // Operations
 public:
 void Translate(CDC* pDC, float dX, float dY, bool rightMultiply = false);
