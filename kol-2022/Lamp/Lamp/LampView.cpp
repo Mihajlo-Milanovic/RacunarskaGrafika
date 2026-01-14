@@ -37,15 +37,25 @@ CLampView::CLampView() noexcept
 {
 	// TODO: add construction code here
 
-	base.Load(_T("base.png"));
-	arm1.Load(_T("arm1.png"));
-	arm2.Load(_T("arm2.png"));
-	head.Load(_T("head.png"));
-	baseShadow.Load(_T("base_shadow.png"));
-	arm1Shadow.Load(_T("arm1_shadow.png"));
-	arm2Shadow.Load(_T("arm2_shadow.png"));
-	headShadow.Load(_T("head_shadow.png"));
-	background.Load(_T("pozadina.jpg"));
+	base = new DImage;
+	arm1 = new DImage;
+	arm2 = new DImage;
+	head = new DImage;
+	baseShadow = new DImage;
+	arm1Shadow = new DImage;
+	arm2Shadow = new DImage;
+	headShadow = new DImage;
+	background = new DImage;
+
+	base->Load(_T("base.png"));
+	arm1->Load(_T("arm1.png"));
+	arm2->Load(_T("arm2.png"));
+	head->Load(_T("head.png"));
+	baseShadow->Load(_T("base_shadow.png"));
+	arm1Shadow->Load(_T("arm1_shadow.png"));
+	arm2Shadow->Load(_T("arm2_shadow.png"));
+	headShadow->Load(_T("head_shadow.png"));
+	background->Load(_T("pozadina.jpg"));
 
 	arm1Angle = 40;
 	arm2Angle = 100;
@@ -61,6 +71,16 @@ CLampView::CLampView() noexcept
 
 CLampView::~CLampView()
 {
+	delete base;
+	delete arm1;
+	delete arm2;
+	delete head;
+	delete baseShadow;
+	delete arm1Shadow;
+	delete arm2Shadow;
+	delete headShadow;
+	delete background;
+
 }
 
 BOOL CLampView::PreCreateWindow(CREATESTRUCT& cs)
@@ -100,7 +120,7 @@ void CLampView::OnDraw(CDC* pDC)
 	memDC.GetWorldTransform(&old);
 
 	DrawBackground(&memDC);
-	Translate(&memDC, cr.Width()/2 - base.Width()/2, cr.Height() - base.Height()*2, true);
+	Translate(&memDC, cr.Width()/2 - base->Width()/2, cr.Height() - base->Height()*2);
 	DrawLampShadow(&memDC);
 	DrawLamp(&memDC, false);
 
@@ -143,7 +163,25 @@ void CLampView::DrawBackground(CDC* pDC) {
 	CRect cr;
 	GetClientRect(cr);
 	
-	background.Draw(pDC, CRect(0, 0, background.Width(), background.Height()), cr);
+	CPoint topLeft(
+		-(background->Width() - cr.Width()) / 2,
+		-(background->Height() - cr.Height())
+	);
+
+	background->Draw(pDC,
+					 CRect(
+						 0,
+						 0,
+						 background->Width(),
+						 background->Height()
+					 ),
+					 CRect(
+						 topLeft.x,
+						 topLeft.y,
+						 topLeft.x + background->Width(),
+						 topLeft.y + background->Height()
+					 )
+	);
 }
 
 void CLampView::DrawImgTransparent(CDC* pDC, DImage* pImage) {
@@ -174,32 +212,32 @@ void CLampView::DrawImgTransparent(CDC* pDC, DImage* pImage) {
 
 void CLampView::DrawLampBase(CDC* pDC, bool bIsShadow) {
 
-	DrawImgTransparent(pDC, bIsShadow ? &baseShadow : &base);
+	DrawImgTransparent(pDC, bIsShadow ? baseShadow : base);
 	Translate(pDC, baseJoint.x, baseJoint.y);
 }
 
 void CLampView::DrawLampArm1(CDC* pDC, bool bIsShadow) {
 
+	Translate(pDC, arm1BigJoint.x, arm1BigJoint.y);
 	Rotate(pDC, arm1Angle);
 	Translate(pDC, -arm1BigJoint.x, -arm1BigJoint.y);
-	Translate(pDC, arm1BigJoint.x, arm1BigJoint.y, true);
-	DrawImgTransparent(pDC, bIsShadow ? &arm1Shadow : &arm1);
+	DrawImgTransparent(pDC, bIsShadow ? arm1Shadow : arm1);
 }
 
 void CLampView::DrawLampArm2(CDC* pDC, bool bIsShadow) {
 
+	Translate(pDC, arm2BigJoint.x, arm2BigJoint.y);
 	Rotate(pDC, arm2Angle);
 	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y);
-	Translate(pDC, arm2BigJoint.x, arm2BigJoint.y, true);
-	DrawImgTransparent(pDC, bIsShadow ? &arm2Shadow : &arm2);
+	DrawImgTransparent(pDC, bIsShadow ? arm2Shadow : arm2);
 }
 
 void CLampView::DrawLampHead(CDC* pDC, bool bIsShadow) {
 
+	Translate(pDC, headJoint.x, headJoint.y);
 	Rotate(pDC, headAngle);
 	Translate(pDC, -headJoint.x, -headJoint.y);
-	Translate(pDC, headJoint.x, headJoint.y, true);
-	DrawImgTransparent(pDC, bIsShadow ? &headShadow : &head);
+	DrawImgTransparent(pDC, bIsShadow ? headShadow : head);
 }
 
 void CLampView::DrawLamp(CDC* pDC, bool bIsShadow) {
@@ -209,7 +247,7 @@ void CLampView::DrawLamp(CDC* pDC, bool bIsShadow) {
 
 	DrawLampBase(pDC, bIsShadow);
 
-	Translate(pDC, -arm1BigJoint.x, -arm1BigJoint.y, true);
+	Translate(pDC, -arm1BigJoint.x, -arm1BigJoint.y);
 	DrawLampArm1(pDC, bIsShadow);
 
 	Translate(pDC, arm1SmallJoint.x, arm1SmallJoint.y);
@@ -217,13 +255,12 @@ void CLampView::DrawLamp(CDC* pDC, bool bIsShadow) {
 	pDC->GetWorldTransform(&cp);
 
 	Rotate(pDC, arm2Angle);
-	Translate(pDC, arm2SmallJoint.x - arm2BigJoint.x, arm2SmallJoint.y - arm2BigJoint.y);
-	Translate(pDC, - headJoint.x, - headJoint.y, true);
+	Translate(pDC, arm2SmallJoint.x - arm2BigJoint.x - headJoint.x, arm2SmallJoint.y - arm2BigJoint.y - headJoint.y);
 	DrawLampHead(pDC, bIsShadow);
 
 	pDC->SetWorldTransform(&cp);
 
-	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y, true);
+	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y);
 	DrawLampArm2(pDC, bIsShadow);
 
 	pDC->SetWorldTransform(&old);
@@ -235,7 +272,7 @@ void CLampView::DrawLampShadow(CDC* pDC) {
 	pDC->GetWorldTransform(&old);
 
 	Scale(pDC, 1, 0.25);
-	Translate(pDC, base.Width(), base.Height());
+	Translate(pDC, base->Width(), base->Height());
 	Rotate(pDC, -90);
 	DrawLamp(pDC, true);
 

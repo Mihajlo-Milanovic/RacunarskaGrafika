@@ -15,15 +15,15 @@ protected: // create from serialization only
 public:
 	CLampDoc* GetDocument() const;
 
-	DImage base;
-	DImage arm1;
-	DImage arm2;
-	DImage head;
-	DImage baseShadow;
-	DImage arm1Shadow;
-	DImage arm2Shadow;
-	DImage headShadow;
-	DImage background;
+	DImage *base;
+	DImage *arm1;
+	DImage *arm2;
+	DImage *head;
+	DImage *baseShadow;
+	DImage *arm1Shadow;
+	DImage *arm2Shadow;
+	DImage *headShadow;
+	DImage *background;
 
 	float arm1Angle;
 	float arm2Angle;
