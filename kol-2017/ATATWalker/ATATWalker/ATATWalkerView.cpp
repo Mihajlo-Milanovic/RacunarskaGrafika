@@ -36,26 +36,45 @@ END_MESSAGE_MAP()
 CATATWalkerView::CATATWalkerView() noexcept
 {
 	// TODO: add construction code here
-	/*Body.png, Leg1.png,
-		Leg2.png, Leg3.png i Back2.jpg*/
-	body.Load(_T("Body.png"));
-	legPart1.Load(_T("Leg1.png"));
-	legPart2.Load(_T("Leg2.png"));
-	legPart3.Load(_T("Leg3.png"));
-	back.Load(_T("Back2.jpg"));
+	
+	body = new DImage;
+	legPart1 = new DImage;
+	legPart2 = new DImage;
+	legPart3 = new DImage;
+	background = new DImage;
+
+	body->Load(_T("Body.png"));
+	legPart1->Load(_T("Leg1.png"));
+	legPart2->Load(_T("Leg2.png"));
+	legPart3->Load(_T("Leg3.png"));
+	background->Load(_T("Back2.jpg"));
 	
 	bodyPosition = { 100, 100 };
-	angles = new short[8]{ -20, -10, 0, 10, 20, 10, 0, -10};
-	leg1PosAng = 2;
-	leg2PosAng = 0;
-	leg3PosAng = 4;
 
-	transporterSize = 1;
+	leg1PosAng = 20;
+	leg2PosAng = -20;
+	leg3PosAng = 0;
+	leg4PosAng = 0;
+
+	leg1MovingForward = true;
+	leg2MovingForward = false;
+	leg3MovingForward = false;
+	leg4MovingForward = true;
+
+	transporterSizeFactor = 1;
+
+	frontLegs = { 270, 168 };
+	backLegs = { 50, 168 };
 }
 
 CATATWalkerView::~CATATWalkerView()
 {
-	delete[] angles;
+
+	delete body;
+	delete legPart1;
+	delete legPart2;
+	delete legPart3;
+	delete background;
 }
 
 BOOL CATATWalkerView::PreCreateWindow(CREATESTRUCT& cs)
@@ -77,29 +96,41 @@ void CATATWalkerView::OnDraw(CDC* pDC)
 
 	// TODO: add draw code for native data here
 
+	CRect cr;
 	GetClientRect(cr);
+
 	if (backgroundRect.IsRectEmpty())
-		backgroundRect.CopyRect(cr);
+		backgroundRect = CRect(0, 0, background->Width(), background->Height());
+
+	CDC* memDC = new CDC;
+	memDC->CreateCompatibleDC(pDC);
+
+	CBitmap *bmp = new CBitmap;
+	bmp->CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
+
+	memDC->SelectObject(bmp);
+
+	//memDC->FillSolidRect(cr, RGB(255, 255, 255));
+
+	int oldGM = memDC->SetGraphicsMode(GM_ADVANCED);
+
+	DrawScene(memDC, cr);
 
 
-	CDC memDC;
-	memDC.CreateCompatibleDC(pDC);
-	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
-	memDC.SelectObject(&bmp);
+	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), memDC, 0, 0, SRCCOPY);
 
-	memDC.FillSolidRect(cr, RGB(255, 255, 255));
-
-	int oldGM = memDC.SetGraphicsMode(GM_ADVANCED);
-
-
-	DrawScene(&memDC, cr);
-
-	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), &memDC, 0, 0, SRCCOPY);
+	delete bmp;
+	delete memDC;
 }
 
 void CATATWalkerView::LoadIdentity(CDC* pDC) {
 	//?
+	XFORM m = {
+		1, 0,
+		0, 1,
+		0, 0
+	};
+	pDC->SetWorldTransform(&m);
 }
 
 void CATATWalkerView::Translate(CDC* pDC, float dX, float dY, bool rightMultiply) {
@@ -131,13 +162,24 @@ void CATATWalkerView::Scale(CDC* pDC, float sX, float sY, bool rightMultiply) {
 
 void CATATWalkerView::DrawScene(CDC* pDC, CRect rect) {
 
-	back.Draw(pDC, CRect(0, 0, back.Width(), back.Height()), backgroundRect);
+	CRect cr;
+	GetClientRect(cr);
 
-	DrawTransparent(pDC, body, bodyPosition.x, bodyPosition.y);
+	background->Draw(pDC, CRect(0, 0, background->Width(), background->Height()), backgroundRect);
 
-	DrawLeg(pDC, angles[leg1PosAng], bodyPosition.x + 50, bodyPosition.y + 168); // bodyPosition.x + 72 was not centered
-	DrawLeg(pDC, angles[leg2PosAng], bodyPosition.x + 270, bodyPosition.y + 168);
-	DrawLeg(pDC, angles[leg3PosAng], bodyPosition.x + 270, bodyPosition.y + 168);	
+	Translate(pDC, bodyPosition.x, bodyPosition.y);
+
+	Scale(pDC, transporterSizeFactor, transporterSizeFactor);
+
+	DrawTransparent(pDC, body);
+	DrawLeg(pDC, leg1PosAng, frontLegs.x, frontLegs.y); 
+	DrawLeg(pDC, leg2PosAng, frontLegs.x, frontLegs.y); 
+	DrawLeg(pDC, leg3PosAng, backLegs.x, backLegs.y);
+	DrawLeg(pDC, leg4PosAng, backLegs.x, backLegs.y);
+
+	Scale(pDC, 1 / transporterSizeFactor, 1 / transporterSizeFactor);
+	
+	LoadIdentity(pDC);
 }
 
 void CATATWalkerView::DrawLeg(CDC* pDC, double alpha, double dx, double dy) {
@@ -145,21 +187,18 @@ void CATATWalkerView::DrawLeg(CDC* pDC, double alpha, double dx, double dy) {
 	XFORM oldT;
 	pDC->GetWorldTransform(&oldT);
 
+	Translate(pDC, dx + 28, dy + 28);
 	Rotate(pDC, alpha);
-	Translate(pDC, -28 /*-leg1.Width() / 2*/, -28 /*-leg1.Width() / 2*/);
-	Translate(pDC, dx + 28 /*leg1.Width() / 2*/, dy + 28 /*leg1.Width() / 2*/, true);
-	
+	Translate(pDC, -28, -28);
 	DrawTransparent(pDC, legPart1);
-
-	Translate(pDC, 2, (legPart1.Height() - 40));
 	
-	Translate(pDC, 29, 29);
+	Translate(pDC, 29 + 3, 29 + 140); // from paint
 	Rotate(pDC, -alpha);
 	Translate(pDC, -29, -29);
+	DrawTransparent(pDC, legPart2);
 
 
-	DrawTransparent(pDC, legPart2, 0, 0);
-	Translate(pDC, -33, legPart2.Height() - 19);
+	Translate(pDC, -33, legPart2->Height() - 19);
 	DrawTransparent(pDC, legPart3);
 
 
@@ -168,44 +207,53 @@ void CATATWalkerView::DrawLeg(CDC* pDC, double alpha, double dx, double dy) {
 
 void CATATWalkerView::MoveBackground(int dx, int dy) {
 
+	CRect cr;
+	GetClientRect(cr);
+
 	backgroundRect.OffsetRect(dx, dy);
 
-	if (!(backgroundRect.left < cr.left &&
-		backgroundRect.top < cr.top &&
-		backgroundRect.right > cr.right &&
-		backgroundRect.bottom > cr.bottom)
+	if (backgroundRect.left > cr.left ||
+		backgroundRect.top > cr.top ||
+		backgroundRect.right < cr.right ||
+		backgroundRect.bottom < cr.bottom
 	)
 		backgroundRect.OffsetRect(-dx, -dy);
-	
-
 }
 
-void CATATWalkerView::DrawTransparent(CDC* pDC, DImage &img, double x, double y) {
+void CATATWalkerView::HandleLegMovement(short& legPosAng, bool &legMovingForward) {
+	if (legPosAng == -20 || legPosAng == 20) {
+		legMovingForward = !legMovingForward;
+	}
+
+	legPosAng += legMovingForward ? 10 : -10;
+}
+
+void CATATWalkerView::DrawTransparent(CDC* pDC, DImage* img) {
 
 	CBitmap mask;
-	mask.CreateBitmap(img.Width(), img.Height(), 1, 1, NULL);
+	mask.CreateBitmap(img->Width(), img->Height(), 1, 1, NULL);
 	
 	CDC srcDC, destDC;
 	srcDC.CreateCompatibleDC(pDC);
 	destDC.CreateCompatibleDC(pDC);
 
-	auto oldSrcBmp = srcDC.SelectObject(img.GetBitmap());
+	auto oldSrcBmp = srcDC.SelectObject(img->GetBitmap());
 	auto oldDestBmp = destDC.SelectObject(&mask);
 
 	COLORREF topLeft = srcDC.GetPixel(1, 1);
 	COLORREF oldSrcBkClr = srcDC.SetBkColor(topLeft);
 
-	destDC.BitBlt(0, 0, img.Width(), img.Height(), &srcDC, 0, 0, SRCCOPY);
+	destDC.BitBlt(0, 0, img->Width(), img->Height(), &srcDC, 0, 0, SRCCOPY);
 
 	COLORREF oldSrcTextColor = srcDC.SetTextColor(RGB(255, 255, 255));
 	srcDC.SetBkColor(RGB(0, 0, 0));
-	srcDC.BitBlt(0, 0, img.Width(), img.Height(), &destDC, 0, 0, SRCAND);
+	srcDC.BitBlt(0, 0, img->Width(), img->Height(), &destDC, 0, 0, SRCAND);
 	srcDC.SelectObject(oldSrcBmp);
 
 
-	pDC->BitBlt(x, y, img.Width(), img.Height(), &destDC, 0, 0, SRCAND);
-	destDC.SelectObject(img.GetBitmap());
-	pDC->BitBlt(x, y, img.Width(), img.Height(), &destDC, 0, 0, SRCPAINT);
+	pDC->BitBlt(0, 0, img->Width(), img->Height(), &destDC, 0, 0, SRCAND);
+	destDC.SelectObject(img->GetBitmap());
+	pDC->BitBlt(0, 0, img->Width(), img->Height(), &destDC, 0, 0, SRCPAINT);
 
 }
 
@@ -254,21 +302,34 @@ CATATWalkerDoc* CATATWalkerView::GetDocument() const // non-debug version is inl
 void CATATWalkerView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: Add your message handler code here and/or call default
+	CRect cr;
+	GetClientRect(cr);
+	cr.SetRect(cr.left - body->Width(), cr.top, cr.right, cr.bottom);
 
 	switch (nChar) {
-		/*case VK_LEFT:
-	
-		break;*/
+		//case VK_LEFT:
+		//
+		//break;
+
 		case VK_RIGHT:
-			leg1PosAng = (leg1PosAng + 1) % 8;
-			leg2PosAng = (leg2PosAng + 1) % 8;
-			leg3PosAng = (leg3PosAng + 1) % 8;
+
+			HandleLegMovement(leg1PosAng, leg1MovingForward);
+			HandleLegMovement(leg2PosAng, leg2MovingForward);
+			HandleLegMovement(leg3PosAng, leg3MovingForward);
+			HandleLegMovement(leg4PosAng, leg4MovingForward);
+
+			bodyPosition.Offset(50, 0);
+
+			if (!cr.PtInRect(bodyPosition)) {
+				bodyPosition = { - body -> Width(), 100};
+			}
+
 		break;
 		case VK_UP:
-			backgroundRect.InflateRect(backgroundRect.Width() * 0.1, backgroundRect.Height() * 0.1);
+			transporterSizeFactor += transporterSizeFactor * 0.1;
 		break;
 		case VK_DOWN:
-			backgroundRect.DeflateRect(backgroundRect.Width() * 0.1, backgroundRect.Height() * 0.1);
+			transporterSizeFactor -= transporterSizeFactor * 0.1;
 		break;
 		case 'A':
 		case 'a':
@@ -285,7 +346,6 @@ void CATATWalkerView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		case 'S':
 		case 's':
 			MoveBackground(0, 200);
-		
 		break;
 
 	}

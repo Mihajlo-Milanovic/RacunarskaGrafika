@@ -16,22 +16,30 @@ protected: // create from serialization only
 public:
 	CATATWalkerDoc* GetDocument() const;
 
-	DImage body;
-	DImage legPart1;
-	DImage legPart2;
-	DImage legPart3;
-	DImage back;
+	DImage *body;
+	DImage *legPart1;
+	DImage *legPart2;
+	DImage *legPart3;
+	DImage *background;
 
 	CPoint bodyPosition;
-	short* angles;
+	CRect backgroundRect;
+
 	short leg1PosAng;
 	short leg2PosAng;
 	short leg3PosAng;
+	short leg4PosAng;
 
-	float transporterSize;
+	bool leg1MovingForward;
+	bool leg2MovingForward;
+	bool leg3MovingForward;
+	bool leg4MovingForward;
 
-	CRect cr;
-	CRect backgroundRect;
+	float transporterSizeFactor;
+
+	CPoint frontLegs;
+	CPoint backLegs;
+
 
 // Operations
 public:
@@ -44,8 +52,9 @@ public:
 	void DrawLeg(CDC* pDC, double alpha, double dx, double dy);
 
 	void MoveBackground(int dx, int dy);
+	void HandleLegMovement(short& legPosAng, bool& movingForward);
 
-	void DrawTransparent(CDC* pDC, DImage &img, double x = 0, double y = 0);
+	void DrawTransparent(CDC* pDC, DImage* img);
 
 // Overrides
 public:

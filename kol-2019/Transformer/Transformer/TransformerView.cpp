@@ -37,12 +37,19 @@ CTransformerView::CTransformerView() noexcept
 {
 	// TODO: add construction code here
 
-	body.Load(_T("body1.png"));
-	background.Load(_T("background.jpg"));
-	arm1.Load(_T("arm1.png"));
-	arm2.Load(_T("arm2.png"));
-	leg1.Load(_T("leg1.png"));
-	leg2.Load(_T("leg2.png"));
+	body = new DImage;
+	background = new DImage;
+	arm1 = new DImage;
+	arm2 = new DImage;
+	leg1 = new DImage;
+	leg2 = new DImage;
+
+	body->Load(_T("body1.png"));
+	background->Load(_T("background.jpg"));
+	arm1->Load(_T("arm1.png"));
+	arm2->Load(_T("arm2.png"));
+	leg1->Load(_T("leg1.png"));
+	leg2->Load(_T("leg2.png"));
 
 	arm1Angle = 0;
 	arm2Angle = 180;
@@ -62,6 +69,12 @@ CTransformerView::CTransformerView() noexcept
 
 CTransformerView::~CTransformerView()
 {
+	delete body;
+	delete background;
+	delete arm1;
+	delete arm2;
+	delete leg1;
+	delete leg2;
 }
 
 BOOL CTransformerView::PreCreateWindow(CREATESTRUCT& cs)
@@ -86,27 +99,30 @@ void CTransformerView::OnDraw(CDC* pDC)
 	CRect cr;
 	GetClientRect(cr);
 
-	CDC memDC;
-	memDC.CreateCompatibleDC(pDC);
+	CDC* memDC = new CDC;
+	memDC->CreateCompatibleDC(pDC);
 
-	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
+	CBitmap* bmp = new CBitmap;
+	bmp->CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
 
-	memDC.SelectObject(&bmp);
-	memDC.FillSolidRect(cr, RGB(255, 255, 255));
+	memDC->SelectObject(bmp);
+	//memDC->FillSolidRect(cr, RGB(255, 255, 255));
 
-	memDC.SetGraphicsMode(GM_ADVANCED);
+	memDC->SetGraphicsMode(GM_ADVANCED);
 
-	DrawBackground(&memDC, cr);
+	DrawBackground(memDC, cr);
 
-	DrawTransformer(&memDC);
+	DrawTransformer(memDC);
 
-	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), &memDC, 0, 0, SRCCOPY);
+	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), memDC, 0, 0, SRCCOPY);
+
+	delete bmp;
+	delete memDC;
 }
 
 void CTransformerView::DrawBackground(CDC *pDC, CRect rc) {
-	background.Draw(pDC, CRect(0, 0, background.Width(), background.Height()), rc);
-	//background.Draw(pDC, CRect(0, 0, background.Width(), background.Height()), CRect(0, 0, background.Width(), background.Height()));
+	//background->Draw(pDC, CRect(0, 0, background->Width(), background->Height()), rc);
+	background->Draw(pDC, CRect(0, 0, background->Width(), background->Height()), CRect(0, 0, background->Width(), background->Height()));
 }
 
 void CTransformerView::DrawImgTransparent(CDC* pDC, DImage* pImage) {
@@ -155,67 +171,46 @@ void CTransformerView::Rotate(CDC* pDC, float angle, bool rightMultiply) {
 
 void CTransformerView::DrawArm1(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, arm1Shoulder.x, arm1Shoulder.y);
 	Rotate(pDC, arm1Angle);
 	Translate(pDC, -arm1Shoulder.x, -arm1Shoulder.y);
-	Translate(pDC, arm1Shoulder.x, arm1Shoulder.y, true);
-	DrawImgTransparent(pDC, &arm1);
-
-	//pDC->SetWorldTransform(&old);
+	DrawImgTransparent(pDC, arm1);
 }
 
 void CTransformerView::DrawArm2(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, arm2Wrist.x, arm2Wrist.y);
 	Rotate(pDC, arm2Angle);
 	Translate(pDC, -arm2Wrist.x, -arm2Wrist.y);
-	Translate(pDC, arm2Wrist.x, arm2Wrist.y, true);
-	DrawImgTransparent(pDC, &arm2);
+	DrawImgTransparent(pDC, arm2);
 
-	//pDC->SetWorldTransform(&old);
 }
 
 void CTransformerView::DrawLeg1(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, leg1Knee.x, leg1Knee.y);
 	Rotate(pDC, leg1Angle);
 	Translate(pDC, -leg1Knee.x, -leg1Knee.y);
-	Translate(pDC, leg1Knee.x, leg1Knee.y, true);
-	DrawImgTransparent(pDC, &leg1);
+	DrawImgTransparent(pDC, leg1);
 
-	//pDC->SetWorldTransform(&old);
 }
 
 void CTransformerView::DrawLeg2(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, leg2Knee.x, leg2Knee.y);
 	Rotate(pDC, leg2Angle);
 	Translate(pDC, -leg2Knee.x, -leg2Knee.y);
-	Translate(pDC, leg2Knee.x, leg2Knee.y, true);
-	DrawImgTransparent(pDC, &leg2);
+	DrawImgTransparent(pDC, leg2);
 
-	//pDC->SetWorldTransform(&old);
 }
 
 void CTransformerView::DrawBody1(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, bodyWaist.x, bodyWaist.y);
 	Rotate(pDC, bodyAngle);
 	Translate(pDC, -bodyWaist.x, -bodyWaist.y);
-	Translate(pDC, bodyWaist.x, bodyWaist.y, true);
-	DrawImgTransparent(pDC, &body);
+	DrawImgTransparent(pDC, body);
 
-	//pDC->SetWorldTransform(&old);
 }
 
 void CTransformerView::DrawTransformer(CDC* pDC) {
@@ -226,80 +221,30 @@ void CTransformerView::DrawTransformer(CDC* pDC) {
 	XFORM old, checkpoint;
 	pDC->GetWorldTransform(&old);
 
-	Translate(pDC, cr.Width()/2 - body.Width(), cr.Height() / 2);
-	pDC->GetWorldTransform(&checkpoint);
-
-	//
-	//					IF YOU WANT TO TRY COMMENTED IMPLEMENTATION
-	//	UNCOMMENT TRANSFORMATION RESET IN EVERY TRANSFORMER PART DRAWING FUNCTION
-	//					AND COMMENT OUT THE CURRENT IMPLEMENTATION
-	//
-	/*
-	
+	Translate(pDC, cr.Width()/2 - body->Width(), cr.Height() / 2);
 	DrawLeg1(pDC);
 
+	pDC->GetWorldTransform(&checkpoint);
+	
 	Translate(pDC, leg1Knee.x - leg2Knee.x, leg1Knee.y - leg2Knee.y);
-	Rotate(pDC, leg1Angle);
 	DrawLeg2(pDC);
 
 	pDC->SetWorldTransform(&checkpoint);
 
-	Translate(pDC, leg1Knee.x - bodyWaist.x, leg1Knee.y - bodyWaist.y);
-	Rotate(pDC, leg1Angle);
-	Translate(pDC, leg1Waist.x - leg1Knee.x, leg1Waist.y - leg1Knee.y);
+	Translate(pDC, leg1Waist.x - bodyWaist.x, leg1Waist.y - bodyWaist.y);
 	DrawBody1(pDC);
 
-	pDC->SetWorldTransform(&checkpoint);
-
-	Translate(pDC, leg1Knee.x - arm2Wrist.x, leg1Knee.y - arm2Wrist.y);
-	Rotate(pDC, leg1Angle);
-	Translate(pDC, leg1Waist.x - leg1Knee.x, leg1Waist.y - leg1Knee.y);
-	Rotate(pDC, bodyAngle);
-	Translate(pDC, bodyShoulder.x - bodyWaist.x, bodyShoulder.y - bodyWaist.y);
-	Rotate(pDC, arm1Angle);
-	Translate(pDC, arm1Wrist.x - arm1Shoulder.x, arm1Wrist.y - arm1Shoulder.y);
-	DrawArm2(pDC);
-
-	pDC->SetWorldTransform(&checkpoint);
-
-	Translate(pDC, leg1Knee.x - arm1Shoulder.x, leg1Knee.y - arm1Shoulder.y);
-	Rotate(pDC, leg1Angle);
-	Translate(pDC, leg1Waist.x - leg1Knee.x, leg1Waist.y - leg1Knee.y);
-	Rotate(pDC, bodyAngle);
-	Translate(pDC, bodyShoulder.x - bodyWaist.x, bodyShoulder.y - bodyWaist.y);
-	DrawArm1(pDC);
-	*/
-
-	DrawLeg1(pDC);
-
-	pDC->GetWorldTransform(&checkpoint);
-	
-
-	Translate(pDC, leg1Knee.x , leg1Knee.y );
-	Translate(pDC, - leg2Knee.x, - leg2Knee.y, true);
-	
-	DrawLeg2(pDC);
-
-	pDC->SetWorldTransform(&checkpoint);
-
-	Translate(pDC, leg1Waist.x , leg1Waist.y);
-	Translate(pDC, -bodyWaist.x , -bodyWaist.y, true);
-	DrawBody1(pDC);
-
-	Translate(pDC, bodyShoulder.x, bodyShoulder.y);
-	Translate(pDC, -arm1Shoulder.x, -arm1Shoulder.y, true);
+	Translate(pDC, bodyShoulder.x - arm1Shoulder.x, bodyShoulder.y - arm1Shoulder.y);
 
 	pDC->GetWorldTransform(&checkpoint);
 
 	Rotate(pDC, arm1Angle);
-	Translate(pDC, arm1Wrist.x, arm1Wrist.y);
-	Translate(pDC, -arm2Wrist.x, -arm2Wrist.y, true);
+	Translate(pDC, arm1Wrist.x - arm2Wrist.x, arm1Wrist.y - arm2Wrist.y);
 	DrawArm2(pDC);
 
 	pDC->SetWorldTransform(&checkpoint);
 
 	DrawArm1(pDC);
-	
 	
 
 	pDC->SetWorldTransform(&old);

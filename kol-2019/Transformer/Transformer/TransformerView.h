@@ -15,12 +15,12 @@ protected: // create from serialization only
 public:
 	CTransformerDoc* GetDocument() const;
 
-	DImage body;
-	DImage background;
-	DImage arm1;
-	DImage arm2;
-	DImage leg1;
-	DImage leg2;
+	DImage *body;
+	DImage *background;
+	DImage *arm1;
+	DImage *arm2;
+	DImage *leg1;
+	DImage *leg2;
 
 	float arm1Angle;
 	float arm2Angle;

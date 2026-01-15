@@ -114,24 +114,26 @@ void CRobotView::OnDraw(CDC* pDC)
 	CRect cr;
 	GetClientRect(cr);
 
-	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
+	CBitmap* bmp = new CBitmap;
+	bmp->CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
 
-	CDC memDC;
-	memDC.CreateCompatibleDC(pDC);
+	CDC* memDC = new CDC;
+	memDC->CreateCompatibleDC(pDC);
 
-	memDC.SelectObject(&bmp);
-	memDC.FillSolidRect(cr, RGB(255, 255, 255));
+	memDC->SelectObject(bmp);
+	//memDC->FillSolidRect(cr, RGB(255, 255, 255));
 
-	memDC.SetGraphicsMode(GM_ADVANCED);
-
-
-	DrawBackground(&memDC);
-	DrawRobot(&memDC);
+	memDC->SetGraphicsMode(GM_ADVANCED);
 
 
-	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), &memDC, 0, 0, SRCCOPY);
+	DrawBackground(memDC);
+	DrawRobot(memDC);
 
+
+	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), memDC, 0, 0, SRCCOPY);
+
+	delete bmp;
+	delete memDC;
 }
 
 void CRobotView::DrawBackground(CDC* pDC) {
