@@ -18,7 +18,7 @@
 #define new DEBUG_NEW
 #endif
 
-#define TO_RAD(angle) (angle/180*3.14)
+#define TO_RAD(angle) (angle / 180 * 3.14)
 
 // CPacmanView
 
@@ -41,11 +41,15 @@ CPacmanView::CPacmanView() noexcept
 {
 	// TODO: add construction code here
 	
-	background.Load(_T("blue.png"));
+	background = new DImage;
+	background->Load(_T("blue.png"));
+
 	mouthAngle = 30;
 	pacmanAngle = 0;
+
 	mirrorPacman = false;
 	gameOver = false;
+
 	pacmanPosition = { 400, 400 , 500, 500};
 	ghostPosition = { 100, 120, 196, 216 };
 
@@ -77,37 +81,32 @@ void CPacmanView::OnDraw(CDC* pDC)
 	CRect cr;
 	GetClientRect(cr);
 
-	CDC memDC;
-	memDC.CreateCompatibleDC(pDC);
-	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
+	CDC *memDC = new CDC;
+	memDC->CreateCompatibleDC(pDC);
+	CBitmap *bmp = new CBitmap;
+	bmp->CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
 
-	memDC.SelectObject(&bmp);
-	memDC.FillSolidRect(cr, RGB(255, 255, 255));
+	memDC->SelectObject(bmp);
+	//memDC->FillSolidRect(cr, RGB(255, 255, 255));
 	
-	memDC.SetGraphicsMode(GM_ADVANCED);
+	memDC->SetGraphicsMode(GM_ADVANCED);
 
-	/**
-	* 
-	*/
 	DetectCollision();
 
-	background.Draw(&memDC, CRect(0, 0, background.Width(), background.Height()), cr);
-
+	background->Draw(memDC, CRect(0, 0, background->Width(), background->Height()), cr);
 
 	XFORM oldWT;
-	memDC.GetWorldTransform(&oldWT);
+	memDC->GetWorldTransform(&oldWT);
 
-	Scale(&memDC, mirrorPacman ? -1 : 1, 1);
-	Rotate(&memDC, pacmanAngle);
-	Translate(&memDC, - pacmanPosition.CenterPoint().x, - pacmanPosition.CenterPoint().y);
-	Translate(&memDC, pacmanPosition.CenterPoint().x, pacmanPosition.CenterPoint().y, true);
-	DrawPacman(&memDC, pacmanPosition, mouthAngle);
+	Translate(memDC, pacmanPosition.CenterPoint().x, pacmanPosition.CenterPoint().y);
+	Scale(memDC, mirrorPacman ? -1 : 1, 1);
+	Rotate(memDC, pacmanAngle);
+	Translate(memDC, - pacmanPosition.CenterPoint().x, - pacmanPosition.CenterPoint().y);
+	DrawPacman(memDC, pacmanPosition, mouthAngle);
 	
-	
-	memDC.SetWorldTransform(&oldWT);
+	memDC->SetWorldTransform(&oldWT);
 
-	DrawGhost(&memDC, ghostPosition);
+	DrawGhost(memDC, ghostPosition);
 
 	if (gameOver) {
 		CFont font;
@@ -124,29 +123,26 @@ void CPacmanView::OnDraw(CDC* pDC)
 			L"Arial"
 		);
 
-		CFont* oldFont = memDC.SelectObject(&font);
+		CFont* oldFont = memDC->SelectObject(&font);
 
-		int oldBkMode = memDC.SetBkMode(TRANSPARENT);
-		auto oldTextColor = memDC.SetTextColor(RGB(255, 255, 255));
+		int oldBkMode = memDC->SetBkMode(TRANSPARENT);
+		auto oldTextColor = memDC->SetTextColor(RGB(255, 255, 255));
 
-		memDC.DrawText(
+		memDC->DrawText(
 			L"The End",
 			cr,
 			DT_CENTER | DT_VCENTER | DT_SINGLELINE
 		);
 
-		memDC.SelectObject(oldFont);
-		memDC.SetBkMode(oldBkMode);
-		memDC.SetTextColor(oldTextColor);
+		memDC->SelectObject(oldFont);
+		memDC->SetBkMode(oldBkMode);
+		memDC->SetTextColor(oldTextColor);
 	}
 
+	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), memDC, 0, 0, SRCCOPY);
 
-	/**
-	*
-	*/
-	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), &memDC, 0, 0, SRCCOPY);
-
-
+	delete bmp;
+	delete memDC;
 }
 
 void CPacmanView::Translate(CDC* pDC, int dX, int dY, bool rightMultiply) {
@@ -159,10 +155,10 @@ void CPacmanView::Translate(CDC* pDC, int dX, int dY, bool rightMultiply) {
 }
 
 void CPacmanView::Rotate(CDC* pDC, float angle, bool rightMultiply) {
-	float angleRad = TO_RAD(angle);
+	float rad = TO_RAD(angle);
 	XFORM m = {
-		cos(angleRad), -sin(angleRad),
-		sin(angleRad), cos(angleRad),
+		cos(rad), -sin(rad),
+		sin(rad), cos(rad),
 		0, 0
 	};
 	pDC->ModifyWorldTransform(&m, rightMultiply ? MWT_RIGHTMULTIPLY : MWT_LEFTMULTIPLY);
@@ -193,7 +189,7 @@ void CPacmanView::DrawPacman(CDC* pDC, CRect rect, float angle) {
 	CPen blackPen(PS_GEOMETRIC, 2, RGB(0, 0, 0));
 	auto oldPen = pDC->SelectObject(&blackPen);
 
-	CBrush yellowBrush(RGB(200, 255, 50));
+	CBrush yellowBrush(RGB(255, 255, 0));
 	auto oldBrush = pDC->SelectObject(&yellowBrush);
 	
 	pDC->Pie(rect, start, end);
@@ -354,26 +350,26 @@ void CPacmanView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	if (!gameOver) {
 		switch (nChar) {
 			case VK_LEFT:
-			mouthAngle = mouthAngle == 0 ? 30 : 0;
-			pacmanPosition.OffsetRect(-10, 0);
-			pacmanAngle = 0;
-			mirrorPacman = true;
+				mouthAngle = mouthAngle == 0 ? 30 : 0;
+				pacmanPosition.OffsetRect(-10, 0);
+				pacmanAngle = 0;
+				mirrorPacman = true;
 			break;
 			case VK_RIGHT:
-			mouthAngle = mouthAngle == 0 ? 30 : 0;
-			pacmanPosition.OffsetRect(10, 0);
-			pacmanAngle = 0;
-			mirrorPacman = false;
+				mouthAngle = mouthAngle == 0 ? 30 : 0;
+				pacmanPosition.OffsetRect(10, 0);
+				pacmanAngle = 0;
+				mirrorPacman = false;
 			break;
 			case VK_UP:
-			mouthAngle = mouthAngle == 0 ? 30 : 0;
-			pacmanPosition.OffsetRect(0, -10);
-			pacmanAngle = 90;
+				mouthAngle = mouthAngle == 0 ? 30 : 0;
+				pacmanPosition.OffsetRect(0, -10);
+				pacmanAngle = 90;
 			break;
 			case VK_DOWN:
-			mouthAngle = mouthAngle == 0 ? 30 : 0;
-			pacmanPosition.OffsetRect(0, 10);
-			pacmanAngle = -90;
+				mouthAngle = mouthAngle == 0 ? 30 : 0;
+				pacmanPosition.OffsetRect(0, 10);
+				pacmanAngle = -90;
 			break;
 		}
 	}

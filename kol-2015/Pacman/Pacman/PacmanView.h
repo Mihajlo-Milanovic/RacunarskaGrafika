@@ -16,11 +16,14 @@ protected: // create from serialization only
 public:
 	CPacmanDoc* GetDocument() const;
 
-	DImage background;
+	DImage *background;
+
 	float mouthAngle;
 	float pacmanAngle;
+
 	bool mirrorPacman;
 	bool gameOver;
+
 	CRect pacmanPosition;
 	CRect ghostPosition;
 
