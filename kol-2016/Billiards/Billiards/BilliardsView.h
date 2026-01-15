@@ -16,8 +16,8 @@ protected: // create from serialization only
 public:
 	CBilliardsDoc* GetDocument() const;
 
-	DImage felt;
-	DImage wood;
+	DImage *felt;
+	DImage *wood;
 
 	CPoint ballPosition;
 	int ballDiameter;

@@ -38,8 +38,11 @@ CBilliardsView::CBilliardsView() noexcept
 {
 	// TODO: add construction code here
 
-	felt.Load(_T("felt2.jpg"));
-	wood.Load(_T("wood.jpg"));
+	felt = new DImage;
+	wood = new DImage;
+
+	felt->Load(_T("felt2.jpg"));
+	wood->Load(_T("wood.jpg"));
 
 	ballDiameter = 30;
 	ballPosition = {600, 400};
@@ -53,6 +56,8 @@ CBilliardsView::CBilliardsView() noexcept
 
 CBilliardsView::~CBilliardsView()
 {
+	delete felt;
+	delete wood;
 }
 
 BOOL CBilliardsView::PreCreateWindow(CREATESTRUCT& cs)
@@ -77,43 +82,44 @@ void CBilliardsView::OnDraw(CDC* pDC)
 	CRect cr;
 	GetClientRect(cr);
 	
+	CDC* memDC = new CDC;
+	memDC->CreateCompatibleDC(pDC);
+	CBitmap *bmp = new CBitmap;
+	bmp->CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
 
-	CDC memDC;
-	memDC.CreateCompatibleDC(pDC);
-	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
+	memDC->SelectObject(bmp);
+	//memDC->FillSolidRect(cr, RGB(255, 255, 255));
 
-	memDC.SelectObject(&bmp);
-	memDC.FillSolidRect(cr, RGB(255, 255, 255));
-
-	memDC.SetGraphicsMode(GM_ADVANCED);
+	memDC->SetGraphicsMode(GM_ADVANCED);
 	XFORM oldWT, wt;
-	memDC.GetWorldTransform(&oldWT);
+	memDC->GetWorldTransform(&oldWT);
 
-	CRect perfectSizeRect(0, 0, felt.Width() * 4 + 100, felt.Height() * 2 + 100); // because of felt dimensions
+	CRect perfectSizeRect(0, 0, felt->Width() * 4 + 100, felt->Height() * 2 + 100); // because of felt dimensions
 
-	DrawBorder(&memDC, /*cr*/perfectSizeRect, 50);
+	DrawBorder(memDC, /*cr*/perfectSizeRect, 50);
 
+	Translate(memDC, ballPosition.x, ballPosition.y);
 
-	Translate(&memDC, ballPosition.x, ballPosition.y);
-	memDC.GetWorldTransform(&wt);
+	memDC->GetWorldTransform(&wt);
 
-	Rotate(&memDC, ballPathAngle);
-	Translate(&memDC, 0, -ballDistanceFromStart);
-	DrawBall(&memDC, ballDiameter);
+	Rotate(memDC, ballPathAngle);
+	Translate(memDC, 0, -ballDistanceFromStart);
+	DrawBall(memDC, ballDiameter);
 
-	memDC.SetWorldTransform(&wt);
-	Rotate(&memDC, poolCueAngle);
-	Translate(&memDC, 0, poolCueDistance);
-	DrawStick(&memDC, 500);
+	memDC->SetWorldTransform(&oldWT);
 
+	DrawHoles(memDC, /*cr*/perfectSizeRect, 50);
 
+	memDC->SetWorldTransform(&wt);
 
-	memDC.SetWorldTransform(&oldWT);
+	Rotate(memDC, poolCueAngle);
+	Translate(memDC, 0, poolCueDistance);
+	Translate(memDC, 0, poolCueDistance);
+	DrawStick(memDC, 500);
 
-	DrawHoles(&memDC, /*cr*/perfectSizeRect, 50);
+	memDC->SetWorldTransform(&oldWT);
 
-	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), &memDC, 0, 0, SRCCOPY);
+	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), memDC, 0, 0, SRCCOPY);
 }
 
 void CBilliardsView::Translate(CDC* pDC, float dX, float dY, bool rightMultiply) {
@@ -138,47 +144,29 @@ void CBilliardsView::Rotate(CDC* pDC, float angle, bool rightMultiply) {
 
 void CBilliardsView::DrawTable(CDC* pDC, CRect rect) {
 
-	/*
-	*	Napisati funkciju DrawTable(CDC* pDC, CRect rect), koja iscrtava površinu bilijarskog stola
-	*	korišćenjem bitmape felt2.jpg. Bitmapu učitati klasom DImage. Dimenzije slike su znatno
-	*	manje od dimenzija prozora, zato je neophodno višestruko iscrtati istu sliku, bez rastezanja.
-	*	Voditi računa da se slika učitava samo jednom, a ne pri svakom osvežavanju prikaza.
-	*/
-
 	int i = rect.left, j = rect.top;
 	int iCount = 4;//rect.Width() / felt.Width();
 	int jCount = 2;//rect.Height() / felt.Height();
 
 	for (int iCounter = 0; iCounter < iCount; iCounter++) {
 		for (int jCounter = 0; jCounter < jCount; jCounter++) {
-			felt.Draw(pDC, CRect(0, 0, felt.Width(), felt.Height()), CRect(i, j, i + felt.Width(), j + felt.Height()));
-			j += felt.Height();
+			felt->Draw(pDC, CRect(0, 0, felt->Width(), felt->Height()), CRect(i, j, i + felt->Width(), j + felt->Height()));
+			j += felt->Height();
 		}
 		j = rect.top;
-		i += felt.Width();
+		i += felt->Width();
 	}
 
 }
 
 void CBilliardsView::DrawBorder(CDC* pDC, CRect rect, int w) {
 
-	/*
-	*	Napisati funkciju DrawBorder(CDC* pDC, CRect rect, int w), koja iscrtava okvir bilijarskog 
-	*	stola, širine w, korišćenjem bitmape wood.jpg. Voditi računa da se slika učitava samo 
-	*	jednom, a ne pri svakom osvežavanju prikaza.
-	*/
-
-	wood.Draw(pDC, CRect(0, 0, wood.Width(), wood.Height()), rect);
+	wood->Draw(pDC, CRect(0, 0, wood->Width(), wood->Height()), rect);
 
 	DrawTable(pDC, CRect(rect.left + w, rect.top + w, rect.right - w, rect.bottom - w));
 }
 
 void CBilliardsView::DrawHoles(CDC* pDC, CRect rect, int size) {
-	
-	/*
-	*	Napisati funkciju DrawHoles(CDC * pDC, CRect rect, int size), koja iscrtava 6 rupa na stolu,
-	*	prečnika size, odmaknutih za dužinu prečnika od ivica stola(tj.prozora).
-	*/
 
 	int radius = size / 2;
 
@@ -209,14 +197,6 @@ void CBilliardsView::DrawHoles(CDC* pDC, CRect rect, int size) {
 
 void CBilliardsView::DrawStick(CDC* pDC, int w) {
 
-	/* 
-	*	Napisati funkciju DrawStick(CDC* pDC, int w), koja iscrtava bilijarski štap dužine w, širine 
-	*	w/100 na vrhu i dvostruko veće širine pri dnu. 2/3 štapa obojeno je oker bojom, a 1/3 braon 
-	*	bojom. Okvir štapa iscrtan je braon olovkom debljine 1. Štap se na debljem kraju završava 
-	*	kružnicom. Da bi se simulirao odsjaj, celom dužinom štapa, pomereno za 2 piksela, crta se 
-	*	bela linija.
-	*/
-
 	int top = w / 200;
 	int bottom = w / 100;
 
@@ -239,10 +219,20 @@ void CBilliardsView::DrawStick(CDC* pDC, int w) {
 
 	CBrush brownBrush(RGB(63, 31, 0));
 	pDC->SelectObject(&brownBrush);
+	
+	pDC->BeginPath();
 
-	pDC->Polygon(trapezoid + 2, 4);
+	pDC->MoveTo(trapezoid[3]);
+	pDC->LineTo(trapezoid[4]);
 
-	pDC->Ellipse(-bottom, w - bottom, bottom, w + bottom);
+	pDC->ArcTo(CRect(-bottom, w - bottom, bottom, w + bottom), trapezoid[4], trapezoid[5]);
+
+	pDC->LineTo(trapezoid[5]);
+	pDC->LineTo(trapezoid[2]);
+
+	pDC->EndPath();
+	pDC->CloseFigure();
+	pDC->StrokeAndFillPath();
 
 	CPen whitePen(PS_COSMETIC, 1, RGB(255, 255, 255));
 	pDC->SelectObject(&whitePen);
@@ -256,12 +246,6 @@ void CBilliardsView::DrawStick(CDC* pDC, int w) {
 }
 
 void CBilliardsView::DrawBall(CDC* pDC, int w) {
-
-	/*
-	*	Napisati funkciju DrawBall(CDC* pDC, int w), koja iscrtava bilijarsku kuglu tamno crvene 
-	*	boje, okvira još tamnije crvene boje, prečnika w. Odsjaj kugle se simulira crtanjem bele 
-	*	kružnice sa 3x manjim prečnikom, izmeštene malo iz centra kugle. 
-	*/
 
 	CPen redPen(PS_COSMETIC, 1, RGB(77, 0, 0));
 	CBrush redBrush(RGB(127, 0, 0));
@@ -282,7 +266,6 @@ void CBilliardsView::DrawBall(CDC* pDC, int w) {
 
 	pDC->Ellipse(CRect(-reflectionRadius / 3, -reflectionRadius * 1.67, reflectionRadius * 1.67, reflectionRadius / 3));
 
-
 	pDC->SelectObject(oldPen);
 	pDC->SelectObject(oldBrush);
 }
@@ -295,6 +278,7 @@ void CBilliardsView::HandleUpArrow(){
 	} else
 		ballDistanceFromStart += 20;
 }
+
 void CBilliardsView::HandleDownArrow() {
 
 	if (ballDistanceFromStart == 0)
@@ -379,6 +363,5 @@ void CBilliardsView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 
 	Invalidate(FALSE);
-
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
