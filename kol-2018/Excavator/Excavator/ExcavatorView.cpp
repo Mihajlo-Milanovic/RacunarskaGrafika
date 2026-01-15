@@ -37,10 +37,15 @@ CExcavatorView::CExcavatorView() noexcept
 {
 	// TODO: add construction code here
 
-	excavator.Load(_T("bager.png"));
-	excavatorArm1.Load(_T("arm1.png"));
-	excavatorArm2.Load(_T("arm2.png"));
-	background.Load(_T("pozadina.png"));
+	excavator = new DImage;
+	excavatorArm1 = new DImage;
+	excavatorArm2 = new DImage;
+	background = new DImage;
+
+	excavator->Load(_T("bager.png"));
+	excavatorArm1->Load(_T("arm1.png"));
+	excavatorArm2->Load(_T("arm2.png"));
+	background->Load(_T("pozadina.png"));
 
 	excavatorFork = GetEnhMetaFile(_T("viljuska.emf"));
 	GetEnhMetaFileHeader(excavatorFork, sizeof(ENHMETAHEADER), &excavatorForkHeader);
@@ -63,13 +68,18 @@ CExcavatorView::CExcavatorView() noexcept
 	arm1BigJoint = { 58, 61 };
 	arm1SmallJoint = { 309, 61 };
 	arm2BigJoint = { 36, 40 };
-	arm2SmallJoint = { 272, 40 };
+	arm2SmallJoint = { 260, 40 };
 	forkJoint = { 14, 20 };
 }
 
 CExcavatorView::~CExcavatorView()
 {
 	DeleteEnhMetaFile(excavatorFork);
+
+	delete excavator;
+	delete excavatorArm1;
+	delete excavatorArm2;
+	delete background;
 }
 
 BOOL CExcavatorView::PreCreateWindow(CREATESTRUCT& cs)
@@ -93,21 +103,24 @@ void CExcavatorView::OnDraw(CDC* pDC)
 	CRect cr;
 	GetClientRect(cr);
 
-	CDC memDC;
-	memDC.CreateCompatibleDC(pDC);
+	CDC* memDC = new CDC;
+	memDC->CreateCompatibleDC(pDC);
 
-	CBitmap bmp;
-	bmp.CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
+	CBitmap* bmp = new CBitmap;
+	bmp->CreateCompatibleBitmap(pDC, cr.Width(), cr.Height());
 
-	memDC.SetGraphicsMode(GM_ADVANCED);
+	memDC->SetGraphicsMode(GM_ADVANCED);
 
-	memDC.SelectObject(&bmp);
-	memDC.FillSolidRect(cr, RGB(255, 255, 255));
+	memDC->SelectObject(bmp);
+	//memDC->FillSolidRect(cr, RGB(255, 255, 255));
 
-	DrawBackground(&memDC);
-	DrawExcavator(&memDC);
+	DrawBackground(memDC);
+	DrawExcavator(memDC);
 
-	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), &memDC, 0, 0, SRCCOPY);
+	pDC->BitBlt(0, 0, cr.Width(), cr.Height(), memDC, 0, 0, SRCCOPY);
+
+	delete bmp;
+	delete memDC;
 }
 
 void CExcavatorView::Translate(CDC* pDC, float dX, float dY, bool rightMultiply) {
@@ -139,12 +152,12 @@ void CExcavatorView::Scale(CDC* pDC, float sX, float sY, bool rightMultiply) {
 
 void CExcavatorView::DrawBackground(CDC* pDC) {
 	
-	CRect backgroundRect(0, 0, background.Width(), background.Height());
+	CRect backgroundRect(0, 0, background->Width(), background->Height());
 	CRect cr, rcRect(backgroundRect);
 	GetClientRect(cr);
 	rcRect.MoveToXY(cr.Width() / 2 - backgroundRect.Width() / 2, cr.Height() - backgroundRect.Height());
 
-	background.Draw(pDC, backgroundRect, rcRect);
+	background->Draw(pDC, backgroundRect, rcRect);
 }
 
 void CExcavatorView::DrawImgTransparent(CDC* pDC, DImage* pImage) {
@@ -175,41 +188,28 @@ void CExcavatorView::DrawImgTransparent(CDC* pDC, DImage* pImage) {
 
 void CExcavatorView::DrawArm1(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, arm1BigJoint.x, arm1BigJoint.y);
 	Rotate(pDC, arm1Angle);
 	Translate(pDC, -arm1BigJoint.x, -arm1BigJoint.y);
-	Translate(pDC, arm1BigJoint.x, arm1BigJoint.y, true);
-	DrawImgTransparent(pDC, &excavatorArm1);
+	DrawImgTransparent(pDC, excavatorArm1);
 
-	//pDC->SetWorldTransform(&old);
 }
 
 void CExcavatorView::DrawArm2(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, arm2BigJoint.x, arm2BigJoint.y);
 	Rotate(pDC, arm2Angle);
 	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y);
-	Translate(pDC, arm2BigJoint.x, arm2BigJoint.y, true);
-	DrawImgTransparent(pDC, &excavatorArm2);
+	DrawImgTransparent(pDC, excavatorArm2);
 
-	//pDC->SetWorldTransform(&old);
 }
 
 void CExcavatorView::DrawFork(CDC* pDC) {
 
-	//XFORM old;
-	//pDC->GetWorldTransform(&old);
-
+	Translate(pDC, forkJoint.y, forkJoint.y);
 	Rotate(pDC, forkAngle);
-	Translate(pDC, -forkJoint.x, -forkJoint.y);//(14,20) * 2.5
-	Translate(pDC, forkJoint.y, forkJoint.y, true);
+	Translate(pDC, -forkJoint.x, -forkJoint.y);
 	pDC->PlayMetaFile(excavatorFork, excavatorForkRect);
-
-	//pDC->SetWorldTransform(&old);
 }
 
 void CExcavatorView::DrawExcavator(CDC* pDC) {
@@ -218,51 +218,21 @@ void CExcavatorView::DrawExcavator(CDC* pDC) {
 	GetClientRect(cr);
 
 	XFORM old;
-	//XFORM excavatorPosition;
 	pDC->GetWorldTransform(&old);
 
-	Translate(pDC, cr.right - excavator.Width() + excavatorDisplacement, cr.bottom - excavator.Height());
-	DrawImgTransparent(pDC, &excavator);
-	/*
-		#########################################################
-		#		LEFTMULTIPLY ONLY SOLUTION (SUBOPTIMAL!)		#
-		#########################################################
-
-		TO USE UNCOMMENT TRANSFORMATION RESETS IN DRAW_PART FUNCTIONS
-
-	pDC->GetWorldTransform(&excavatorPosition);
-
-	Translate(pDC, 0, excavatorArm1.Height() - 30);
-	DrawArm1(pDC);
-
-	pDC->SetWorldTransform(&excavatorPosition);
-
-	Translate(pDC, 22, 111);
-	Rotate(pDC, arm1Angle);
-	Translate(pDC, 250, 0);
-	DrawArm2(pDC);
-
-	pDC->SetWorldTransform(&excavatorPosition);
-
+	Translate(pDC, cr.right - excavator->Width() + excavatorDisplacement, cr.bottom - excavator->Height());
+	DrawImgTransparent(pDC, excavator);
 	
-	Translate(pDC, 23, 100);
-	Rotate(pDC, arm1Angle);
-	Translate(pDC, 250, 0);
-	Rotate(pDC, arm2Angle);
-	Translate(pDC, 240, 0);
-	DrawFork(pDC);
-	*/
-
 	Translate(pDC, excavatorArm1Joint.x - arm1BigJoint.x, excavatorArm1Joint.y - arm1BigJoint.y);
 	DrawArm1(pDC);
 
 	Translate(pDC, arm1SmallJoint.x , arm1SmallJoint.y);
-	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y, true);
+	Translate(pDC, -arm2BigJoint.x, -arm2BigJoint.y);
 	DrawArm2(pDC);
 
 	Translate(pDC, arm2SmallJoint.x, arm2SmallJoint.y);
 	Scale(pDC, 2.5, 2.5);
-	Translate(pDC, -forkJoint.x, -forkJoint.y, true);
+	Translate(pDC, -forkJoint.x, -forkJoint.y);
 	DrawFork(pDC);
 
 

@@ -15,10 +15,11 @@ protected: // create from serialization only
 public:
 	CExcavatorDoc* GetDocument() const;
 
-	DImage excavator;
-	DImage excavatorArm1;
-	DImage excavatorArm2;
-	DImage background;
+	DImage *excavator;
+	DImage *excavatorArm1;
+	DImage *excavatorArm2;
+	DImage *background;
+
 	HENHMETAFILE excavatorFork;
 	ENHMETAHEADER excavatorForkHeader;
 
