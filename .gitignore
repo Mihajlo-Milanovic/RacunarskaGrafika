@@ -416,3 +416,57 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+#############################################
+#   MFC / Win32 / GDI / OpenGL specific	    #
+#############################################
+
+# Precompiled headers
+*.pch
+*.pchi
+
+# MFC browse & IntelliSense
+*.bsc
+*.sbr
+
+# Resource compiler
+*.res
+*.rc2
+*.aps
+
+# Windows manifest intermediates
+*.manifest
+*.manifest.res
+
+# Export / import libs
+*.exp
+*.lib
+
+# OpenGL shader build artifacts (if compiling shaders offline)
+*.spv
+*.glslc
+
+# OpenGL cache (NVIDIA / AMD drivers sometimes generate these)
+*.nv*
+*.opengl_cache
+
+# Generated MOC / auto-generated files (if using Qt with OpenGL)
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Debug symbol databases
+*.pdb
+*.ilk
+
+# CMake build folders (if used)
+build/
+cmake-build-*/
+
+# Clang/LLVM build intermediates (if used)
+*.dSYM/
+*.o
+*.obj
+
+# Windows crash dumps
+*.dmp
