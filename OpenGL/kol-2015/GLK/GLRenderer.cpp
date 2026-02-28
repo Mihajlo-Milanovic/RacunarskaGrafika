@@ -8,7 +8,7 @@
 #include <string>
 //#pragma comment(lib, "GL\\glut32.lib")
 
-#define RAD(angle) (angle * 3.141529 / 180)
+#define RAD(angle) (angle * 3.141592 / 180)
 
 CGLRenderer::CGLRenderer(void)
 {
@@ -130,7 +130,6 @@ void CGLRenderer::DrawScene(CDC *pDC)
 
 	glEnable(GL_DEPTH_TEST);
 
-	//glTranslatef(0, 0, 0);
 	glRotated(beta, 1, 0, 0);
 	glRotated(alpha, 0, 1, 0);
 
